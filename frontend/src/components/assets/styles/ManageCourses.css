@@ -1,0 +1,103 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(135deg, #e0e0e0, #f4f4f9);
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+.manage-courses-container {
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.add-course-button {
+    padding: 10px 20px;
+    font-size: 1rem;
+    background-color: #5c67f2;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+    margin-bottom: 20px;
+}
+
+.add-course-button:hover {
+    background-color: #4a50e0;
+}
+
+.course-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.course-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    margin: 10px 0;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.course-info {
+    text-align: left;
+}
+
+.course-info h3 {
+    margin: 0;
+    color: #5c67f2;
+    font-size: 1.2rem;
+}
+
+.course-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.course-actions button {
+    padding: 8px 12px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.delete-button {
+    background-color: #ff4d4d;
+    color: white;
+}
+
+.delete-button:hover {
+    background-color: #e04444;
+}
+
+.edit-button {
+    background-color: #ffa726;
+    color: white;
+}
+
+.edit-button:hover {
+    background-color: #fb8c00;
+}
+
+.details-button {
+    background-color: #5c67f2;
+    color: white;
+}
+
+.details-button:hover {
+    background-color: #4a50e0;
+}

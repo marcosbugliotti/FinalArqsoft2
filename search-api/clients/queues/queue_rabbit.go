@@ -69,10 +69,9 @@ func (rabbit Rabbit) StartConsumer(handler func(courses.CourseUpdate)) error {
 		nil,
 	)
 	if err != nil {
-		return fmt.Errorf("Error al registrar el consumidor: %v", err)
+		return fmt.Errorf("error al registrar el consumidor: %v", err)
 	}
 
-	// Iniciar una goroutine para procesar mensajes
 	go func() {
 		for msg := range messages {
 			var courseUpdate courses.CourseUpdate
@@ -80,6 +79,8 @@ func (rabbit Rabbit) StartConsumer(handler func(courses.CourseUpdate)) error {
 				log.Printf("Error al deserializar el mensaje: %v", err)
 				continue
 			}
+
+			log.Printf("Mensaje recibido en el consumidor: %+v", courseUpdate)
 
 			// Pasar el mensaje al manejador (handler)
 			handler(courseUpdate)

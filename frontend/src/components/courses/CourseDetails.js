@@ -1,9 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useNavigate, Link } from 'react-router-dom';
-import { useParams } from 'react-router-dom';
+import { useNavigate, Link, useParams } from 'react-router-dom';
 import '../assets/styles/CourseDetails.css';
 
+
+const images = [
+    require('../../images/image1.png'),
+    require('../../images/image2.jpeg'),
+    require('../../images/image3.png'),
+    require('../../images/image4.jpg'),
+    require('../../images/image5.jpg'),
+    require('../../images/image6.jpg'),
+    require('../../images/image7.jpg'),
+    require('../../images/image8.png'),
+];
 
 function CourseDetails() {
     const { courseId } = useParams();
@@ -11,6 +21,7 @@ function CourseDetails() {
     const [course, setCourse] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [randomImage, setRandomImage] = useState('');
 
     useEffect(() => {
         const fetchCourse = async () => {
@@ -23,6 +34,10 @@ function CourseDetails() {
                 setLoading(false);
             }
         };
+
+        // Selecciona una imagen aleatoria
+        const randomIndex = Math.floor(Math.random() * images.length);
+        setRandomImage(images[randomIndex]);
 
         fetchCourse();
     }, [courseId]);
@@ -55,7 +70,8 @@ function CourseDetails() {
             <button className="back-button" onClick={() => navigate('/home')}>Volver</button>
             <div className="course-details">
                 <h1>{course.name}</h1>
-                <img src={`frontend\src\images${course.image_id}`} alt={course.name} className="course-image" />
+                {/* Mostrar la imagen aleatoria */}
+                {randomImage && <img src={randomImage} alt="Imagen aleatoria del curso" className="course-image" />}
                 <p><strong>Description:</strong> {course.description}</p>
                 <p><strong>Category:</strong> {course.category}</p>
                 <p><strong>Duration:</strong> {course.duration}</p>

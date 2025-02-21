@@ -150,3 +150,19 @@ body {
 .error-message {
     color: red;
 }
+
+.back-button {
+    margin: 20px 0;
+    padding: 10px 20px;
+    font-size: 1rem;
+    background-color: #5c67f2;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.back-button:hover {
+    background-color: #4a50e0;
+}

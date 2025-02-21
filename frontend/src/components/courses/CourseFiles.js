@@ -12,13 +12,24 @@ const CourseFiles = () => {
   const [course, setCourse] = useState(null);
 
   useEffect(() => {
+    if (!courseId) {
+      setError('ID del curso no válido');
+      setLoading(false);
+      return;
+    }
+
     const fetchData = async () => {
       try {
-        // Obtener información del curso
+        if (isNaN(courseId)) {
+          throw new Error('ID del curso no válido');
+        }
+
         const courseResponse = await axios.get(`http://localhost:8080/courses/${courseId}`);
+        if (!courseResponse.data) {
+          throw new Error('Curso no encontrado');
+        }
         setCourse(courseResponse.data);
 
-        // Obtener archivos del curso
         const filesResponse = await axios.get(`http://localhost:8080/courses/${courseId}/files`);
         setFiles(filesResponse.data || []);
         setLoading(false);
@@ -30,11 +41,15 @@ const CourseFiles = () => {
     };
 
     fetchData();
-  }, [courseId]);
+  }, [courseId, navigate]);
+
+  if (!courseId) {
+    navigate('/home');
+    return null;
+  }
 
   const handleDownload = async (file) => {
     try {
-      // Crear un blob desde el contenido base64
       const byteCharacters = atob(file.content);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
@@ -43,7 +58,6 @@ const CourseFiles = () => {
       const byteArray = new Uint8Array(byteNumbers);
       const blob = new Blob([byteArray]);
 
-      // Crear URL y descargar
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;

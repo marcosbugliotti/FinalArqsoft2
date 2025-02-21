@@ -10,9 +10,9 @@ function Home() {
     const [error, setError] = useState(null);
     const { user } = useContext(UserContext);
     const navigate = useNavigate();
-    const userType = localStorage.getItem('usertype');
     
-    const isAdmin = userType && userType.toLowerCase() === 'administrador';
+    // Obtener el tipo de usuario del contexto user
+    const isAdmin = user && user.user_type.toLowerCase() === 'administrador';
 
     useEffect(() => {
         const fetchCursos = async () => {
@@ -57,7 +57,7 @@ function Home() {
                 {isAdmin && <button className="button" onClick={() => navigate('/manage-courses')}>Gestión de Cursos</button>}
             </div>
             <h2>Cursos Disponibles</h2>
-            {cursos.length === 0 ? (
+            {cursos === null ? (
                 <p>No hay cursos disponibles.</p>
             ) : (
                 <ul className="course-list">

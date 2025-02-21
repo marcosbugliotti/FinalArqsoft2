@@ -23,10 +23,7 @@ function Register() {
                 user_type
             });
             const { id } = response.data;
-
-            localStorage.setItem('userId', id);
-            localStorage.setItem('usertype', user_type);
-            console.log(user_type);
+            
             setUser(response.data);
             alert('Registration successful');
             navigate('/login');

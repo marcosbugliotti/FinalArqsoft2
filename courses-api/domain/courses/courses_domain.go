@@ -35,5 +35,5 @@ type CourseResponse struct {
 }
 type CursosNew struct {
 	Operation string `json:"operation"`
-	CourseID  int64  `json:"course_id"`
+	ID        int64  `json:"id"`
 }

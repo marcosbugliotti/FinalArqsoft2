@@ -18,7 +18,7 @@ type Repository interface {
 }
 
 type Tokenizer interface {
-	GenerateToken(username string, userID int64) (string, error)
+	GenerateToken(username string, userID int64, userType string) (string, error)
 }
 
 type Service struct {
@@ -247,7 +247,7 @@ func (service Service) Login(username string, password string) (domain.LoginResp
 	}
 
 	// Generate token
-	token, err := service.tokenizer.GenerateToken(user.Username, user.ID)
+	token, err := service.tokenizer.GenerateToken(user.Username, user.ID, user.UserType)
 	if err != nil {
 		return domain.LoginResponse{}, fmt.Errorf("error generating token: %w", err)
 	}

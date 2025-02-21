@@ -3,6 +3,7 @@ package search
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"search-api/domain/courses"
 	"strconv"
@@ -54,6 +55,9 @@ func (controller Controller) Search(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error en la búsqueda: %v", err)})
 		return
 	}
+
+	// Log para ver los resultados de la búsqueda
+	log.Printf("Resultados de la búsqueda para la consulta '%s': %+v", query, results)
 
 	// Enviar los resultados como respuesta JSON
 	c.JSON(http.StatusOK, results)

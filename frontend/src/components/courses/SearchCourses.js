@@ -19,7 +19,12 @@ const SearchCourses = () => {
             const response = await axios.get(`http://localhost:8082/search?q=${searchTerm}`);
             console.log("resultado:", response.data);
             
-            setCourses(response.data);
+            if (!response.data || response.data.length === 0) {
+                setError('No se encontraron cursos con ese nombre.');
+                setCourses([]);
+            } else {
+                setCourses(response.data);
+            }
 
         } catch (err) {
             setError('Error fetching courses: ' + err.message);
@@ -30,6 +35,7 @@ const SearchCourses = () => {
 
     return (
         <div className="search-courses-container">
+            <button className="back-button" onClick={() => navigate('/home')}>Volver</button>
             <h1>Buscar Cursos</h1>
             <form onSubmit={handleSearch} className="search-form">
                 <input
@@ -47,10 +53,10 @@ const SearchCourses = () => {
             {courses.length > 0 ? (
                 <ul className="course-list">
                     {courses.map(course => (
-                        <li key={course.course_id} className="course-item">
+                        <li key={course.id} className="course-item">
                             <h3>{course.name}</h3>
                             <p>{course.description}</p>
-                            <button className="button" onClick={() => navigate(`/courses/${course.course_id}`)}>Ver Detalles</button>
+                            <button className="button" onClick={() => navigate(`/courses/${course.id}`)}>Ver Detalles</button>
                         </li>
                     ))}
                 </ul>

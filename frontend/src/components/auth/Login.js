@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import axios from 'axios';
 import { UserContext } from '../context/UserContext';
 import { useNavigate } from 'react-router-dom';
+import jwtDecode from 'jwt-decode';
 import './Login.css'; 
 
 function Login() {
@@ -18,13 +19,24 @@ function Login() {
                 username,
                 password
             });
-            const { user_id, user_type, token } = response.data;
+            const { token } = response.data;
+            
+            // Decodificar el token para obtener la información
+            const decodedToken = jwtDecode(token);
+            const userType = decodedToken.user_type;
+            const userId = decodedToken.user_id;
 
-            localStorage.setItem('userId', user_id);
-            localStorage.setItem('usertype', user_type);
+            // Guardar en localStorage
+            localStorage.setItem('userId', userId);
+            localStorage.setItem('usertype', userType.toLowerCase());
             localStorage.setItem('token', token);
-            setUser(response.data);
-            alert('Login successful: ');
+            
+            // Actualizar el contexto del usuario
+            setUser({
+                ...decodedToken,
+                token
+            });
+            
             navigate('/home');
         } catch (error) {
             setError('Failed to login: ' + error.message);
@@ -40,8 +52,22 @@ function Login() {
             <h1 className="welcome-title">Bienvenido al Sistema de Cursos</h1>
             <h2>Iniciar sesión</h2>
             <form onSubmit={handleLogin} className="login-form">
-                <input type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder="Usuario" required className="input-field" />
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Contraseña" required className="input-field" />
+                <input 
+                    type="text" 
+                    value={username} 
+                    onChange={e => setUsername(e.target.value)} 
+                    placeholder="Usuario" 
+                    required 
+                    className="input-field" 
+                />
+                <input 
+                    type="password" 
+                    value={password} 
+                    onChange={e => setPassword(e.target.value)} 
+                    placeholder="Contraseña" 
+                    required 
+                    className="input-field" 
+                />
                 <button type="submit" className="login-button">Iniciar sesión</button>
                 <button type="button" onClick={handleRegisterRedirect} className="register-button">Registrarse</button>
             </form>

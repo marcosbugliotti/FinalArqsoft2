@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"log"
 	"search-api/clients/queues"
 	searchController "search-api/controllers/search"
-	"search-api/repositories/courses"
+	httpRepo "search-api/repositories/courses/courses_http"
+	solrRepo "search-api/repositories/courses/courses_solr"
 	searchService "search-api/services/search"
 	"time"
 
@@ -13,19 +15,41 @@ import (
 )
 
 func main() {
-
-	log.Println("Esperando 3 minutos para que los servicios dependientes inicien...")
-	time.Sleep(3 * time.Minute)
+	log.Println("Esperando 2 minutos para que los servicios dependientes inicien...")
+	time.Sleep(2 * time.Minute)
 	log.Println("Iniciando la aplicación...")
 
 	// Configuración de SolR
-	solrRepo := courses.NewSolr(courses.SolrConfig{
+	solrClient := solrRepo.NewSolr(solrRepo.SolrConfig{
 		Host:       "solr",    // SolR host
 		Port:       "8983",    // SolR port
 		Collection: "courses", // Nombre de la colección en SolR
 	})
 
-	// Configuración de RabbitMQ
+	// Configuración del cliente HTTP para la API de Cursos
+	coursesClient := httpRepo.NewHTTP(httpRepo.HTTPConfig{
+		Host: "courses-api",
+		Port: "8080",
+	})
+
+	// Obtener todos los cursos
+	coursesList, err := coursesClient.GetCourses(context.Background())
+	if err != nil {
+		log.Fatalf("Error al obtener cursos: %v", err)
+	}
+
+	// Indexar todos los cursos en Solr
+	if err := solrClient.IndexAllCourses(context.Background(), coursesList); err != nil {
+		log.Fatalf("Error al indexar cursos en Solr: %v", err)
+	}
+
+	// Inicialización del servicio de búsqueda
+	searchSvc := searchService.NewService(solrClient, coursesClient)
+
+	// Inicialización del controlador de búsqueda
+	searchCtrl := searchController.NewController(searchSvc)
+
+	// Lanzar el consumidor de RabbitMQ
 	eventsQueue := queues.NewRabbit(queues.RabbitConfig{
 		Host:      "rabbitmq",
 		Port:      "5672",
@@ -34,20 +58,7 @@ func main() {
 		QueueName: "courses_queue",
 	})
 
-	// Configuración del cliente HTTP para la API de Cursos
-	coursesAPI := courses.NewHTTP(courses.HTTPConfig{
-		Host: "courses-api",
-		Port: "8080",
-	})
-
-	// Inicialización del servicio de búsqueda
-	searchService := searchService.NewService(solrRepo, coursesAPI)
-
-	// Inicialización del controlador de búsqueda
-	searchController := searchController.NewController(searchService)
-
-	// Lanzar el consumidor de RabbitMQ
-	if err := eventsQueue.StartConsumer(searchService.HandleCourseUpdate); err != nil {
+	if err := eventsQueue.StartConsumer(searchSvc.HandleCourseUpdate); err != nil {
 		log.Fatalf("Error al ejecutar el consumidor: %v", err)
 	}
 
@@ -60,7 +71,7 @@ func main() {
 		AllowHeaders:    []string{"Origin", "Content-Type"},
 	}))
 
-	router.GET("/search", searchController.Search)
+	router.GET("/search", searchCtrl.Search)
 
 	// Ejecutar la API en el puerto 8082
 	if err := router.Run(":8082"); err != nil {

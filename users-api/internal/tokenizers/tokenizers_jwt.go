@@ -22,10 +22,11 @@ func NewTokenizer(config JWTConfig) JWT {
 	}
 }
 
-func (tokenizer JWT) GenerateToken(username string, userID int64) (string, error) {
+func (tokenizer JWT) GenerateToken(username string, userID int64, userType string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"username":        username,
 		"user_id":         userID,
+		"user_type":       userType,
 		"expiration_date": time.Now().UTC().Add(tokenizer.config.Duration),
 	})
 

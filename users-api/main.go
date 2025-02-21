@@ -14,8 +14,8 @@ import (
 
 func main() {
 
-	log.Println("Esperando 3 minutos para que los servicios dependientes inicien...")
-	time.Sleep(3 * time.Minute)
+	log.Println("Esperando 2 minutos para que los servicios dependientes inicien...")
+	time.Sleep(2 * time.Minute)
 	log.Println("Iniciando la aplicación...")
 
 	// MySQL

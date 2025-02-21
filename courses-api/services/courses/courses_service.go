@@ -108,9 +108,9 @@ func (s Service) CreateCourse(ctx context.Context, req courses.CreateCourseReque
 	go func() {
 		if err := s.eventsQueue.Publish(courses.CursosNew{
 			Operation: "POST",
-			CourseID:  createdCourse.ID,
+			ID:        createdCourse.ID,
 		}); err != nil {
-			fmt.Println(fmt.Sprintf("Error al publicar nuevo curso: %v", err))
+			fmt.Printf("Error al publicar nuevo curso: %v", err)
 		}
 	}()
 
@@ -203,10 +203,10 @@ func (s Service) UpdateCourse(ctx context.Context, id int64, req courses.UpdateC
 
 	go func() {
 		if err := s.eventsQueue.Publish(courses.CursosNew{
-			Operation: "PUT",
-			CourseID:  updatedCourse.ID,
+			Operation: "UPDATE",
+			ID:        updatedCourse.ID,
 		}); err != nil {
-			fmt.Println(fmt.Sprintf("Error al publicar actualización de curso: %v", err))
+			fmt.Printf("Error al publicar actualización de curso: %v", err)
 		}
 	}()
 
@@ -225,17 +225,17 @@ func (s Service) UpdateCourse(ctx context.Context, id int64, req courses.UpdateC
 
 func (s Service) DeleteCourse(ctx context.Context, id int64) error {
 	// Verificar si hay inscripciones para este curso
-	//inscriptions, err := s.httpClient.GetInscriptionsByCourse(uint(id))
-	//if err != nil {
-	//return fmt.Errorf("error al verificar inscripciones: %v", err)
-	//}
+	inscriptions, err := s.httpClient.GetInscriptionsByCourse(uint(id))
+	if err != nil {
+		return fmt.Errorf("error al verificar inscripciones: %v", err)
+	}
 
-	//if len(inscriptions) > 0 {
-	//	return errors.New("no se puede eliminar el curso porque tiene inscripciones activas")
-	//}
+	if len(inscriptions) > 0 {
+		return fmt.Errorf("no se puede eliminar el curso porque tiene %d inscripciones activas", len(inscriptions))
+	}
 
 	// Eliminar los comentarios asociados al curso
-	err := s.commentsRepository.DeleteCommentsByCourseID(ctx, id)
+	err = s.commentsRepository.DeleteCommentsByCourseID(ctx, id)
 	if err != nil {
 		return fmt.Errorf("error al eliminar los comentarios del curso: %v", err)
 	}
@@ -255,9 +255,9 @@ func (s Service) DeleteCourse(ctx context.Context, id int64) error {
 	go func() {
 		if err := s.eventsQueue.Publish(courses.CursosNew{
 			Operation: "DELETE",
-			CourseID:  id,
+			ID:        id,
 		}); err != nil {
-			fmt.Println(fmt.Sprintf("Error al publicar eliminación de curso: %v", err))
+			fmt.Printf("Error al publicar eliminación de curso: %v", err)
 		}
 	}()
 

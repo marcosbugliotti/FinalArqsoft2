@@ -9,5 +9,6 @@ type Course struct {
 	InstructorID int64   `bson:"instructor_id"`
 	ImageID      string  `bson:"image_id"`
 	Capacity     int     `bson:"capacity"`
+	Available    bool    `bson:"available"`
 	Rating       float64 `bson:"rating"`
 }

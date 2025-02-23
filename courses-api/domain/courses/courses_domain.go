@@ -6,9 +6,8 @@ type CreateCourseRequest struct {
 	Category     string `json:"category" binding:"required"`
 	Duration     string `json:"duration" binding:"required"`
 	InstructorID int64  `json:"instructor_id" binding:"required"`
-	// ImageID ya no es obligatorio
-	// ImageID      string `json:"image_id" binding:"required"`
 	Capacity int `json:"capacity" binding:"required"`
+	Available bool `json:"available"`
 }
 
 type UpdateCourseRequest struct {
@@ -19,6 +18,7 @@ type UpdateCourseRequest struct {
 	InstructorID int64   `json:"instructor_id"`
 	ImageID      string  `json:"image_id"`
 	Capacity     int     `json:"capacity"`
+	Available  	 bool `json:"available"`
 	Rating       float64 `json:"rating"`
 }
 
@@ -31,6 +31,7 @@ type CourseResponse struct {
 	InstructorID int64   `json:"instructor_id"`
 	ImageID      string  `json:"image_id"`
 	Capacity     int     `json:"capacity"`
+	Available  	 bool `json:"available"`
 	Rating       float64 `json:"rating"`
 }
 type CursosNew struct {

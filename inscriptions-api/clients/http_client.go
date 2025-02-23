@@ -50,8 +50,9 @@ func (c *HTTPClient) CheckCourseExists(courseID uint) error {
 }
 
 type CourseDetails struct {
-	ID       uint `json:"id"`
-	Capacity int  `json:"capacity"`
+	ID        uint `json:"id"`
+	Capacity  int  `json:"capacity"`
+	Available bool `json:"available"`
 	// Add other fields if needed
 }
 
@@ -72,4 +73,23 @@ func (c *HTTPClient) GetCourseDetails(courseID uint) (*CourseDetails, error) {
 	}
 
 	return &course, nil
+}
+
+func (c *HTTPClient) UpdateCourseAvailability(courseID int64) error {
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/courses/%d/availability", c.coursesAPIURL, courseID), nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to update course availability for course ID %d", courseID)
+	}
+
+	return nil
 }

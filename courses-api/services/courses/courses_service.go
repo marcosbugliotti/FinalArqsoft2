@@ -97,7 +97,8 @@ func (s Service) CreateCourse(ctx context.Context, req courses.CreateCourseReque
 		InstructorID: req.InstructorID,
 		ImageID:      imagePath, // Asignar la imagen aleatoria
 		Capacity:     req.Capacity,
-		Rating:       0, // Inicialmente, el rating es 0
+		Rating:       0,                // Inicialmente, el rating es 0
+		Available:    req.Capacity > 0, // Asignar disponibilidad
 	}
 
 	createdCourse, err := s.repository.CreateCourse(ctx, course)
@@ -124,6 +125,7 @@ func (s Service) CreateCourse(ctx context.Context, req courses.CreateCourseReque
 		ImageID:      createdCourse.ImageID,
 		Capacity:     createdCourse.Capacity,
 		Rating:       createdCourse.Rating,
+		Available:    createdCourse.Available,
 	}, nil
 }
 
@@ -145,6 +147,7 @@ func (s Service) GetCourses(ctx context.Context) ([]courses.CourseResponse, erro
 			ImageID:      course.ImageID,
 			Capacity:     course.Capacity,
 			Rating:       course.Rating,
+			Available:    course.Available,
 		})
 	}
 
@@ -167,15 +170,22 @@ func (s Service) GetCourseByID(ctx context.Context, id int64) (courses.CourseRes
 		ImageID:      course.ImageID,
 		Capacity:     course.Capacity,
 		Rating:       course.Rating,
+		Available:    course.Available,
 	}, nil
 }
 
 func (s Service) UpdateCourse(ctx context.Context, id int64, req courses.UpdateCourseRequest) (courses.CourseResponse, error) {
+	var auxiliar int
+	var borrarcurso bool
+	borrarcurso = false
 	course, err := s.repository.GetCourseByID(ctx, id)
 	if err != nil {
 		return courses.CourseResponse{}, fmt.Errorf("course not found: %v", err)
 	}
 
+	// Verificar si la capacidad ha cambiado
+
+	// Actualizar los campos del curso
 	if req.Name != "" {
 		course.Name = req.Name
 	}
@@ -192,24 +202,76 @@ func (s Service) UpdateCourse(ctx context.Context, id int64, req courses.UpdateC
 		course.InstructorID = req.InstructorID
 	}
 	if req.Capacity != 0 {
+		if req.Capacity < course.Capacity {
+			// Verificar inscripciones actuales
+			inscriptions, err := s.httpClient.GetInscriptionsByCourse(uint(id))
+			if err != nil {
+				return courses.CourseResponse{}, fmt.Errorf("error al verificar inscripciones: %v", err)
+			}
+			if len(inscriptions) > req.Capacity {
+				return courses.CourseResponse{}, fmt.Errorf("no se puede reducir la capacidad a un número menor que las inscripciones actuales")
+			}
+
+		}
+		if req.Capacity > course.Capacity {
+			if !course.Available {
+				req.Available = false
+				course.Available = true
+			}
+		}
+
+		auxiliar = course.Capacity
 		course.Capacity = req.Capacity
 	}
-	// No actualizamos el rating aquí, ya que se actualizará con los comentarios
 
 	updatedCourse, err := s.repository.UpdateCourse(ctx, course)
 	if err != nil {
 		return courses.CourseResponse{}, fmt.Errorf("failed to update course: %v", err)
 	}
 
-	go func() {
-		if err := s.eventsQueue.Publish(courses.CursosNew{
-			Operation: "UPDATE",
-			ID:        updatedCourse.ID,
-		}); err != nil {
-			fmt.Printf("Error al publicar actualización de curso: %v", err)
-		}
-	}()
+	if req.Capacity != 0 {
+		if req.Capacity < auxiliar {
+			inscriptions, err := s.httpClient.GetInscriptionsByCourse(uint(id))
+			if err != nil {
+				return courses.CourseResponse{}, fmt.Errorf("error al verificar inscripciones: %v", err)
+			}
+			if len(inscriptions) == req.Capacity {
+				if err := s.UpdateCourseAvailability(ctx, course.ID); err != nil {
+					return courses.CourseResponse{}, fmt.Errorf("error al actualizar disponibilidad: %v", err)
+				}
+				borrarcurso = true
+			}
 
+		}
+		if req.Capacity > auxiliar {
+			if !req.Available {
+				go func() {
+					if err := s.eventsQueue.Publish(courses.CursosNew{
+						Operation: "POST",
+						ID:        course.ID,
+					}); err != nil {
+						fmt.Printf("Error al publicar nuevo curso: %v", err)
+					}
+				}()
+
+			}
+
+		}
+	}
+	// Actualizar la disponibilidad del curso
+
+	if course.Available {
+		if !borrarcurso {
+			go func() {
+				if err := s.eventsQueue.Publish(courses.CursosNew{
+					Operation: "UPDATE",
+					ID:        course.ID,
+				}); err != nil {
+					fmt.Printf("Error al publicar nuevo curso: %v", err)
+				}
+			}()
+		}
+	}
 	return courses.CourseResponse{
 		ID:           updatedCourse.ID,
 		Name:         updatedCourse.Name,
@@ -220,6 +282,7 @@ func (s Service) UpdateCourse(ctx context.Context, id int64, req courses.UpdateC
 		ImageID:      updatedCourse.ImageID,
 		Capacity:     updatedCourse.Capacity,
 		Rating:       updatedCourse.Rating,
+		Available:    updatedCourse.Available,
 	}, nil
 }
 
@@ -275,6 +338,51 @@ func (s Service) UpdateCourseRating(ctx context.Context, courseID int64, newRati
 	_, err = s.repository.UpdateCourse(ctx, course)
 	if err != nil {
 		return fmt.Errorf("failed to update course rating: %v", err)
+	}
+
+	return nil
+}
+
+func (s Service) UpdateCourseAvailability(ctx context.Context, courseID int64) error {
+	// Obtener el curso por ID
+	course, err := s.repository.GetCourseByID(ctx, courseID)
+	if err != nil {
+		return fmt.Errorf("error al obtener el curso: %v", err)
+	}
+
+	// Log para mostrar el estado del curso
+	fmt.Printf("Estado del curso antes de la actualización: %+v\n", course)
+
+	// Obtener las inscripciones actuales para el curso
+	inscriptions, err := s.httpClient.GetInscriptionsByCourse(uint(courseID))
+	if err != nil {
+		return fmt.Errorf("error al obtener inscripciones: %v", err)
+	}
+
+	// Log para mostrar la cantidad de inscripciones
+	fmt.Printf("Cantidad de inscripciones para el curso ID %d: %d\n", courseID, len(inscriptions))
+
+	// Verificar si la cantidad de inscripciones es igual o mayor que la capacidad
+	if len(inscriptions) >= course.Capacity {
+		course.Available = false
+		fmt.Printf("El curso ID %d ya no está disponible. Inscripciones: %d, Capacidad: %d\n", courseID, len(inscriptions), course.Capacity)
+
+		// Publicar un mensaje en RabbitMQ para indicar que el curso ya no está disponible
+		if err := s.eventsQueue.Publish(courses.CursosNew{
+			Operation: "DELETE",
+			ID:        course.ID,
+		}); err != nil {
+			fmt.Printf("Error al publicar eliminación de curso en RabbitMQ: %v", err)
+		}
+	} else {
+		course.Available = true
+		fmt.Printf("El curso ID %d está disponible. Inscripciones: %d, Capacidad: %d\n", courseID, len(inscriptions), course.Capacity)
+	}
+
+	// Actualizar el curso en la base de datos
+	_, err = s.repository.UpdateCourse(ctx, course)
+	if err != nil {
+		return fmt.Errorf("error al actualizar la disponibilidad del curso: %v", err)
 	}
 
 	return nil

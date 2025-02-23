@@ -16,6 +16,7 @@ type Service interface {
 	GetCourseByID(ctx context.Context, id int64) (courses.CourseResponse, error)
 	UpdateCourse(ctx context.Context, id int64, req courses.UpdateCourseRequest) (courses.CourseResponse, error)
 	DeleteCourse(ctx context.Context, id int64) error
+	UpdateCourseAvailability(ctx context.Context, id int64) error
 }
 
 // Controller estructura del controlador
@@ -86,7 +87,7 @@ func (ctrl Controller) UpdateCourse(ctx *gin.Context) {
 
 	course, err := ctrl.service.UpdateCourse(ctx.Request.Context(), id, req)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar curso: " + err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -105,4 +106,20 @@ func (ctrl Controller) DeleteCourse(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"mensaje": "Curso eliminado correctamente"})
+}
+
+// Actualizar disponibilidad del curso
+func (ctrl Controller) UpdateCourseAvailability(ctx *gin.Context) {
+	courseID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
+		return
+	}
+
+	if err := ctrl.service.UpdateCourseAvailability(ctx.Request.Context(), courseID); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar disponibilidad: " + err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Disponibilidad del curso actualizada correctamente"})
 }

@@ -44,14 +44,22 @@ function EditCourse() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.put(`http://localhost:8080/courses/${courseId}`, { ...courseData});
+            const payload = {
+                ...courseData,
+                instructor_id: Number(courseData.instructor_id),
+                capacity: Number(courseData.capacity)
+            };
+            
+            console.log("Payload enviado:", payload); // Depuración
+            
+            await axios.put(`http://localhost:8080/courses/${courseId}`, payload);
             alert('Curso actualizado con éxito');
             navigate('/manage-courses');
         } catch (error) {
             setError(`Error updating course: ${error.response?.data?.message || error.message}`);
         }
     };
-
+    
     return (
         <div className="edit-course-container">
             <button className="back-button" onClick={() => navigate('/home')}>Volver</button>

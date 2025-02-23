@@ -30,27 +30,26 @@ func (s *Service) CreateInscription(ctx context.Context, userID, courseID uint) 
 		return nil, fmt.Errorf("failed to verify user: %v", err)
 	}
 
-	// Verificar si el curso existe y obtener su capacidad
+	// Verificar si el curso existe y obtener su disponibilidad
 	course, err := s.httpClient.GetCourseDetails(courseID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to verify course: %v", err)
 	}
 
-	// Obtener el número actual de inscripciones para el curso
-	currentInscriptions, err := s.repository.GetInscriptionsByCourse(ctx, courseID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get current inscriptions: %v", err)
-	}
-
-	// Verificar si hay cupos disponibles
-	if len(currentInscriptions) >= course.Capacity {
-		return nil, errors.New("course is at full capacity")
+	// Verificar si el curso está disponible
+	if !course.Available {
+		return nil, errors.New("course is not available for enrollment")
 	}
 
 	// Crear la inscripción
 	inscription, err := s.repository.CreateInscription(ctx, userID, courseID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create inscription: %v", err)
+	}
+
+	// Actualizar la disponibilidad del curso
+	if err := s.httpClient.UpdateCourseAvailability(int64(inscription.CourseID)); err != nil {
+		return nil, fmt.Errorf("failed to update course availability: %v", err)
 	}
 
 	return inscription, nil

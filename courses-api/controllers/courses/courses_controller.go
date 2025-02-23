@@ -17,6 +17,7 @@ type Service interface {
 	UpdateCourse(ctx context.Context, id int64, req courses.UpdateCourseRequest) (courses.CourseResponse, error)
 	DeleteCourse(ctx context.Context, id int64) error
 	UpdateCourseAvailability(ctx context.Context, id int64) error
+	CourseAvailability(ctx context.Context) ([]courses.CourseResponse, error)
 }
 
 // Controller estructura del controlador
@@ -122,4 +123,14 @@ func (ctrl Controller) UpdateCourseAvailability(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "Disponibilidad del curso actualizada correctamente"})
+}
+
+func (ctrl Controller) CourseAvailability(ctx *gin.Context) {
+	courses, err := ctrl.service.CourseAvailability(ctx.Request.Context())
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Error al listar cursos: " + err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, courses)
+
 }

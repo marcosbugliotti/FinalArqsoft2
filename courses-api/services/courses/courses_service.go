@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 )
 
@@ -386,4 +387,50 @@ func (s Service) UpdateCourseAvailability(ctx context.Context, courseID int64) e
 	}
 
 	return nil
+}
+
+func (s Service) CourseAvailability(ctx context.Context) ([]courses.CourseResponse, error) {
+	coursesDAO, err := s.repository.GetCourses(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get courses: %v", err)
+	}
+
+	var coursesResponse []courses.CourseResponse
+	for _, course := range coursesDAO {
+		coursesResponse = append(coursesResponse, courses.CourseResponse{
+			ID:           course.ID,
+			Name:         course.Name,
+			Description:  course.Description,
+			Category:     course.Category,
+			Duration:     course.Duration,
+			InstructorID: course.InstructorID,
+			ImageID:      course.ImageID,
+			Capacity:     course.Capacity,
+			Rating:       course.Rating,
+			Available:    course.Available,
+		})
+	}
+
+	coursesChannel := make(chan courses.CourseResponse, len(coursesResponse))
+	var wg sync.WaitGroup
+
+	for _, course := range coursesResponse {
+		wg.Add(1)
+		go func(course courses.CourseResponse) {
+			defer wg.Done()
+			if course.Available {
+				coursesChannel <- course
+			}
+		}(course)
+	}
+
+	wg.Wait()
+	close(coursesChannel)
+
+	var results []courses.CourseResponse
+	for course := range coursesChannel {
+		results = append(results, course)
+	}
+
+	return results, nil
 }

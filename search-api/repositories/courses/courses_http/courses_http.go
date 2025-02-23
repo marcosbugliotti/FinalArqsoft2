@@ -57,10 +57,10 @@ func (repository HTTP) GetCourseByID(ctx context.Context, id string) (domainCour
 }
 
 // GetCourses obtiene todos los cursos
-func (repository HTTP) GetCourses(ctx context.Context) ([]daoCourses.Course, error) {
-	log.Println("Iniciando la obtención de todos los cursos...") // Log de inicio
+func (repository HTTP) GetCoursesAvailability(ctx context.Context) ([]daoCourses.Course, error) {
+	log.Println("Iniciando la obtención de todos los cursos Disponibles...") // Log de inicio
 
-	url := repository.baseURL("")                  // Solo llama a baseURL sin concatenar http://
+	url := repository.baseURL("availability")      // Solo llama a baseURL sin concatenar http://
 	log.Printf("URL de la API de cursos: %s", url) // Log de la URL
 
 	resp, err := http.Get(url)

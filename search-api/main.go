@@ -33,7 +33,7 @@ func main() {
 	})
 
 	// Obtener todos los cursos
-	coursesList, err := coursesClient.GetCourses(context.Background())
+	coursesList, err := coursesClient.GetCoursesAvailability(context.Background())
 	if err != nil {
 		log.Fatalf("Error al obtener cursos: %v", err)
 	}

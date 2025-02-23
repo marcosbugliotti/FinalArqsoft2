@@ -38,6 +38,7 @@ func SetupRouter(courseController courses.Controller, commentController comments
 		coursesGroup.POST("/:id/files", fileController.CreateFile)
 		coursesGroup.GET("/:id/files", fileController.GetFilesByCourseID)
 		coursesGroup.PUT("/:id/availability", courseController.UpdateCourseAvailability)
+		coursesGroup.GET("/availability", courseController.CourseAvailability)
 	}
 
 	return r

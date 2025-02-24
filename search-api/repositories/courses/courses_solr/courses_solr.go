@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	daoCourses "search-api/dao/courses"
-	domainCourses "search-api/domain/courses"
 	"strconv" // Asegúrate de que esta línea esté presente
 
 	"github.com/stevenferrer/solr-go"
@@ -36,7 +35,7 @@ func NewSolr(config SolrConfig) Solr {
 }
 
 // Index adds a new course document to the Solr collection
-func (searchEngine Solr) Index(ctx context.Context, course domainCourses.CourseUpdate) (string, error) {
+func (searchEngine Solr) Index(ctx context.Context, course daoCourses.Course) (string, error) {
 	// Prepare the document for SolR
 	doc := map[string]interface{}{
 		"id":          course.ID,
@@ -81,7 +80,7 @@ func (searchEngine Solr) Index(ctx context.Context, course domainCourses.CourseU
 }
 
 // Update modifies an existing course document in the Solr collection
-func (searchEngine Solr) Update(ctx context.Context, course domainCourses.CourseUpdate) error {
+func (searchEngine Solr) Update(ctx context.Context, course daoCourses.Course) error {
 	doc := map[string]interface{}{
 		"id":          course.ID,
 		"name":        course.Name,
@@ -145,7 +144,7 @@ func (searchEngine Solr) Delete(ctx context.Context, id string) error {
 }
 
 // Search searches for courses in the Solr collection based on a query
-func (searchEngine Solr) Search(ctx context.Context, query string, limit int, offset int) ([]domainCourses.CourseUpdate, error) {
+func (searchEngine Solr) Search(ctx context.Context, query string, limit int, offset int) ([]daoCourses.Course, error) {
 	if query == "" {
 		return nil, fmt.Errorf("la consulta no puede estar vacía")
 	}
@@ -163,9 +162,9 @@ func (searchEngine Solr) Search(ctx context.Context, query string, limit int, of
 		return nil, fmt.Errorf("error al ejecutar la consulta de búsqueda: %v, consulta: %s", resp.Error, solrQuery)
 	}
 
-	var coursesList []domainCourses.CourseUpdate
+	var coursesList []daoCourses.Course
 	for _, doc := range resp.Response.Documents {
-		course := domainCourses.CourseUpdate{
+		course := daoCourses.Course{
 			ID:          getIntField(doc, "id"),
 			Name:        getStringField(doc, "name"),
 			Category:    getStringField(doc, "category"),
@@ -219,8 +218,7 @@ func getIntField(doc map[string]interface{}, field string) int64 {
 func (searchEngine Solr) IndexAllCourses(ctx context.Context, courses []daoCourses.Course) error {
 	for _, course := range courses {
 
-		courseUpdate := domainCourses.CourseUpdate{
-			Operation:   "CREATE",
+		courseUpdate := daoCourses.Course{
 			ID:          course.ID, // Asignar el ID convertido
 			Name:        course.Name,
 			Category:    course.Category,

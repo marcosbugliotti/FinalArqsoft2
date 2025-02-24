@@ -4,19 +4,18 @@ import (
 	"context"
 	"fmt"
 	"log"
-	domain "search-api/domain/courses" // Alias para los tipos de dominio
-	// Importar el paquete DAO
+	dao "search-api/dao/courses"                            // Alias para los tipos de DAO
+	domain "search-api/domain/courses"                      // Alias para los tipos de dominio
 	httpRepo "search-api/repositories/courses/courses_http" // Importar el paquete HTTP
-	// Importar el paquete Solr
 	"strconv"
 )
 
 // Repository define las operaciones necesarias en el índice de SolR
 type Repository interface {
-	Index(ctx context.Context, course domain.CourseUpdate) (string, error)
-	Update(ctx context.Context, course domain.CourseUpdate) error
+	Index(ctx context.Context, course dao.Course) (string, error)
+	Update(ctx context.Context, course dao.Course) error
 	Delete(ctx context.Context, id string) error
-	Search(ctx context.Context, query string, limit int, offset int) ([]domain.CourseUpdate, error)
+	Search(ctx context.Context, query string, limit int, offset int) ([]dao.Course, error)
 }
 
 // Service representa el servicio de búsqueda
@@ -34,20 +33,26 @@ func NewService(repository Repository, httpClient httpRepo.HTTP) Service {
 }
 
 // HandleCourseUpdate procesa las actualizaciones de cursos recibidas desde RabbitMQ
-func (service Service) HandleCourseUpdate(courseUpdate domain.CourseUpdate) {
+func (service Service) HandleCourseUpdate(courseNew domain.CourseUpdate) {
 	ctx := context.Background()
 
 	// Agregar log para ver el mensaje recibido
-	log.Printf("Mensaje recibido para procesar: %+v", courseUpdate)
+	log.Printf("Mensaje recibido para procesar: %+v", courseNew)
 
 	// Convertir ID a string
-	courseIDStr := strconv.FormatInt(courseUpdate.ID, 10) // Convertir ID a string
+	courseIDStr := strconv.FormatInt(courseNew.ID, 10) // Convertir ID a string
 
-	switch courseUpdate.Operation {
+	switch courseNew.Operation {
 	case "POST":
 
 		// Llamar a GetCourseByID y almacenar el resultado en 'curso'
-		curso, err := service.httpClient.GetCourseByID(ctx, courseIDStr) // Usar courseIDStr
+		courseUpdate, err := service.httpClient.GetCourseByID(ctx, courseIDStr) // Usar courseIDStr
+		curso := dao.Course{
+			ID:          courseUpdate.ID,
+			Name:        courseUpdate.Name,
+			Category:    courseUpdate.Category,
+			Description: courseUpdate.Description,
+		}
 		if err != nil {
 			log.Printf("Error al obtener el curso (ID: %s): %v", courseIDStr, err) // Cambiar ID a string
 			return                                                                 // Salir de la función si hay un error
@@ -63,7 +68,13 @@ func (service Service) HandleCourseUpdate(courseUpdate domain.CourseUpdate) {
 
 	case "UPDATE":
 
-		curso, err := service.httpClient.GetCourseByID(ctx, courseIDStr) // Usar courseIDStr
+		courseUpdate, err := service.httpClient.GetCourseByID(ctx, courseIDStr) // Usar courseIDStr
+		curso := dao.Course{
+			ID:          courseUpdate.ID,
+			Name:        courseUpdate.Name,
+			Category:    courseUpdate.Category,
+			Description: courseUpdate.Description,
+		}
 		if err != nil {
 			log.Printf("Error al obtener el curso (ID: %s): %v", courseIDStr, err) // Cambiar ID a string
 			return                                                                 // Salir de la función si hay un error
@@ -78,24 +89,37 @@ func (service Service) HandleCourseUpdate(courseUpdate domain.CourseUpdate) {
 		}
 
 	case "DELETE":
-		log.Printf("Procesando operación DELETE para el curso: %d", courseUpdate.ID)
+		log.Printf("Procesando operación DELETE para el curso: %d", courseNew.ID)
 		// Eliminar el curso del índice de SolR
 		if err := service.repository.Delete(ctx, courseIDStr); err != nil { // Usar courseIDStr
-			log.Printf("Error al eliminar el curso (%d): %v", courseUpdate.ID, err)
+			log.Printf("Error al eliminar el curso (%d): %v", courseNew.ID, err)
 		} else {
-			log.Printf("Curso eliminado exitosamente: %d", courseUpdate.ID)
+			log.Printf("Curso eliminado exitosamente: %d", courseNew.ID)
 		}
 
 	default:
-		log.Printf("Operación desconocida: %s", courseUpdate.Operation)
+		log.Printf("Operación desconocida: %s", courseNew.Operation)
 	}
 }
 
 // Search busca cursos en SolR según el término de búsqueda, límite y desplazamiento
 func (service Service) Search(ctx context.Context, query string, limit int, offset int) ([]domain.CourseUpdate, error) {
-	results, err := service.repository.Search(ctx, query, limit, offset)
+	daoResults, err := service.repository.Search(ctx, query, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("error en la búsqueda de cursos: %w", err)
 	}
+
+	// Convertir de dao.Course a domain.CourseUpdate
+	var results []domain.CourseUpdate
+	for _, daoCourse := range daoResults {
+		results = append(results, domain.CourseUpdate{
+			Operation:   "SEARCH", // El tipo de operación es 'SEARCH' para los resultados de la búsqueda
+			ID:          daoCourse.ID,
+			Name:        daoCourse.Name,
+			Category:    daoCourse.Category,
+			Description: daoCourse.Description,
+		})
+	}
+
 	return results, nil
 }

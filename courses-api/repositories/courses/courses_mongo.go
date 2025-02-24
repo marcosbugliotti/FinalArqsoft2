@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -65,6 +66,7 @@ var (
 
 // Inicializa el contador en función del último ID en la colección
 func InitializeCounter(mongoClient *mongo.Client, dbName, collectionName string) {
+	time.Sleep(20 * time.Second)
 	collection := mongoClient.Database(dbName).Collection(collectionName)
 	var lastCourse coursesDAO.Course
 

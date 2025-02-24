@@ -44,6 +44,7 @@ func main() {
 	}
 
 	// Inicialización del servicio de búsqueda
+	// Configuración de Solr y cliente HTTP
 	searchSvc := searchService.NewService(solrClient, coursesClient)
 
 	// Inicialización del controlador de búsqueda

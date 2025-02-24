@@ -4,15 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	dao "inscriptions-api/DAOs/inscriptions"
 	"inscriptions-api/clients"
 	domain "inscriptions-api/domain/inscriptions"
 )
 
 type Repository interface {
-	CreateInscription(ctx context.Context, userID, courseID uint) (*domain.Inscription, error)
-	GetInscriptions(ctx context.Context) ([]domain.Inscription, error)
-	GetInscriptionsByUser(ctx context.Context, userID uint) ([]domain.Inscription, error)
-	GetInscriptionsByCourse(ctx context.Context, courseID uint) ([]domain.Inscription, error)
+	CreateInscription(ctx context.Context, userID, courseID uint) (*dao.InscriptionModel, error)
+	GetInscriptions(ctx context.Context) ([]dao.InscriptionModel, error)
+	GetInscriptionsByUser(ctx context.Context, userID uint) ([]dao.InscriptionModel, error)
+	GetInscriptionsByCourse(ctx context.Context, courseID uint) ([]dao.InscriptionModel, error)
 }
 
 type Service struct {
@@ -25,49 +26,71 @@ func NewService(repository Repository, httpClient *clients.HTTPClient) *Service 
 }
 
 func (s *Service) CreateInscription(ctx context.Context, userID, courseID uint) (*domain.Inscription, error) {
-	// Verificar si el usuario existe (usando la implementación temporal)
 	if err := s.httpClient.CheckUserExists(userID); err != nil {
 		return nil, fmt.Errorf("failed to verify user: %v", err)
 	}
 
-	// Verificar si el curso existe y obtener su disponibilidad
 	course, err := s.httpClient.GetCourseDetails(courseID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to verify course: %v", err)
 	}
 
-	// Verificar si el curso está disponible
 	if !course.Available {
 		return nil, errors.New("course is not available for enrollment")
 	}
 
-	// Crear la inscripción
-	inscription, err := s.repository.CreateInscription(ctx, userID, courseID)
+	inscriptionModel, err := s.repository.CreateInscription(ctx, userID, courseID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create inscription: %v", err)
 	}
 
-	// Actualizar la disponibilidad del curso
-	if err := s.httpClient.UpdateCourseAvailability(int64(inscription.CourseID)); err != nil {
+	if err := s.httpClient.UpdateCourseAvailability(int64(inscriptionModel.CourseID)); err != nil {
 		return nil, fmt.Errorf("failed to update course availability: %v", err)
 	}
 
-	return inscription, nil
+	return &domain.Inscription{
+		ID:       inscriptionModel.ID,
+		UserID:   inscriptionModel.UserID,
+		CourseID: inscriptionModel.CourseID,
+	}, nil
 }
 
 func (s *Service) GetInscriptions(ctx context.Context) ([]domain.Inscription, error) {
-	return s.repository.GetInscriptions(ctx)
+	models, err := s.repository.GetInscriptions(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return s.mapModelsToDomain(models), nil
 }
 
 func (s *Service) GetInscriptionsByUser(ctx context.Context, userID uint) ([]domain.Inscription, error) {
-	return s.repository.GetInscriptionsByUser(ctx, userID)
+	models, err := s.repository.GetInscriptionsByUser(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	return s.mapModelsToDomain(models), nil
 }
 
 func (s *Service) GetInscriptionsByCourse(ctx context.Context, courseID uint) ([]domain.Inscription, error) {
-	// Verificar si el curso existe
 	if err := s.httpClient.CheckCourseExists(courseID); err != nil {
 		return nil, fmt.Errorf("failed to verify course: %v", err)
 	}
 
-	return s.repository.GetInscriptionsByCourse(ctx, courseID)
+	models, err := s.repository.GetInscriptionsByCourse(ctx, courseID)
+	if err != nil {
+		return nil, err
+	}
+	return s.mapModelsToDomain(models), nil
+}
+
+func (s *Service) mapModelsToDomain(models []dao.InscriptionModel) []domain.Inscription {
+	inscriptions := make([]domain.Inscription, len(models))
+	for i, model := range models {
+		inscriptions[i] = domain.Inscription{
+			ID:       model.ID,
+			UserID:   model.UserID,
+			CourseID: model.CourseID,
+		}
+	}
+	return inscriptions
 }

@@ -8,11 +8,8 @@ import (
 	repositories "inscriptions-api/repositories/inscriptions"
 	router "inscriptions-api/router/inscriptions"
 	service "inscriptions-api/services/inscriptions"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
-	"strconv"
 	"time"
 
 	"gorm.io/gorm"
@@ -29,7 +26,7 @@ func main() {
 
 	// Crear el cliente HTTP
 	httpClient := clients.NewHTTPClient(
-		getEnv("USERS_API_URL", "http://localhost:8081/mock"),
+		getEnv("USERS_API_URL", "http://localhost:8083"),
 		getEnv("COURSES_API_URL", "http://localhost:8080"), // Asegúrate de que esta URL sea correcta
 	)
 
@@ -42,43 +39,6 @@ func main() {
 	// Configuración del router.
 	r := gin.Default()
 	router.MapRoutes(r, inscriptionController)
-
-	// Agregar un endpoint mock para verificar usuarios
-	r.GET("/mock/users/:id", func(c *gin.Context) {
-		userID, err := strconv.ParseUint(c.Param("id"), 10, 32)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-			return
-		}
-		// Simular que los usuarios con ID par existen
-		if userID%2 == 0 {
-			c.JSON(http.StatusOK, gin.H{"id": userID, "name": "Mock User"})
-		} else {
-			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-		}
-	})
-
-	// Agregar un endpoint de prueba para verificar la conexión con la API de cursos
-	r.GET("/test-course-api", func(c *gin.Context) {
-		url := fmt.Sprintf("%s/courses/1", getEnv("COURSES_API_URL", "http://courses-api:8080"))
-		resp, err := http.Get(url)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error al conectar con la API de cursos: %v", err)})
-			return
-		}
-		defer resp.Body.Close()
-
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error al leer la respuesta: %v", err)})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"status": resp.StatusCode,
-			"body":   string(body),
-		})
-	})
 
 	// Asegúrate de que la aplicación use el puerto correcto
 	port := getEnv("PORT", "8081")

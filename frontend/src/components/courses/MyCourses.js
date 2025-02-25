@@ -33,7 +33,7 @@ function MyCourses() {
                 console.log('userId:', userId);
     
                 // Obtener inscripciones del usuario
-                const inscriptionsResponse = await axios.get(`http://localhost:8081/users/${userId}/inscriptions`);
+                const inscriptionsResponse = await axios.get(`http://localhost:8085/users/${userId}/inscriptions`);
                 
                 // Agregar log para ver la respuesta de inscripciones
                 console.log('inscriptionsResponse:', inscriptionsResponse.data);

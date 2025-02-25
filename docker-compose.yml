@@ -1,6 +1,21 @@
 version: '3.8'
 
 services:
+
+  # Servicio de NGINX
+  nginx:
+    image: nginx:latest
+    container_name: nginx-container
+    ports:
+      - "8085:8085"  
+    volumes:
+      - ./inscriptions-api/nginx/nginx.conf:/etc/nginx/nginx.conf  # Montamos el archivo de configuración de NGINX
+    depends_on:
+      - inscriptions-api1
+      - inscriptions-api2
+    networks:
+      - netapp
+
   # Servicio de la aplicación de cursos
   courses-api:
     build:
@@ -18,7 +33,9 @@ services:
       - netapp
 
   # Servicio de la aplicación de inscripciones
-  inscriptions-api:
+  inscriptions-api1:
+    image: inscriptions-api:latest
+    container_name: inscriptions-api1-container
     build:
       context: ./inscriptions-api
       dockerfile: Dockerfile
@@ -32,6 +49,24 @@ services:
       - courses-api
     networks:
       - netapp
+
+  inscriptions-api2:
+    image: inscriptions-api:latest
+    container_name: inscriptions-api2-container
+    build:
+      context: ./inscriptions-api
+      dockerfile: Dockerfile
+    ports:
+      - "8084:8081"
+    environment:
+      - USERS_API_URL=http://users-api:8083
+      - COURSES_API_URL=http://courses-api:8080
+    depends_on:
+      - mysql
+      - courses-api
+    networks:
+      - netapp
+
 
   # Servicio de la aplicación de búsqueda
   search-api:

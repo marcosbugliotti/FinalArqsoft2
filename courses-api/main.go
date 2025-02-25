@@ -133,7 +133,7 @@ func main() {
 	// Crear el cliente HTTP para la API de inscripciones
 	inscriptionsAPIURL := os.Getenv("INSCRIPTIONS_API_URL")
 	if inscriptionsAPIURL == "" {
-		inscriptionsAPIURL = "http://inscriptions-api:8081"
+		inscriptionsAPIURL = "http://nginx:8085"
 	}
 	httpClient := clients.NewHTTPClient(inscriptionsAPIURL)
 

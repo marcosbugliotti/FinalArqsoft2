@@ -13,7 +13,7 @@ import (
 func MapRoutes(r *gin.Engine, ctrl *controller.Controller) {
 	// Configuración de CORS
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:8081"},
+		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:8085"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},

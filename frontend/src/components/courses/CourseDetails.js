@@ -51,7 +51,7 @@ function CourseDetails() {
 
         try {
             // Intentar inscribirse en el curso
-            await axios.post(`http://localhost:8081/inscriptions`, {
+            await axios.post(`http://localhost:8085/inscriptions`, {
                 user_id: parseInt(userId),
                 course_id: parseInt(courseId)
             });

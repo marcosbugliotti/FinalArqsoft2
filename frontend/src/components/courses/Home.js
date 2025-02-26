@@ -55,6 +55,11 @@ function Home() {
                 <button className="button" onClick={() => navigate('/search')}>Buscar un curso</button>
                 <button className="button" onClick={() => navigate('/my-courses')}>Mis Cursos</button>
                 {isAdmin && <button className="button" onClick={() => navigate('/manage-courses')}>Gestión de Cursos</button>}
+                {isAdmin && (
+                    <button className="button" onClick={() => navigate('/services-status')}>
+                    Estado de Servicios
+                    </button>
+                )}
             </div>
             <h2>Cursos Disponibles</h2>
             {cursos === null ? (

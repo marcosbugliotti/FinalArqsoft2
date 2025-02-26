@@ -3,9 +3,11 @@ package main
 import (
 	"log"
 	"time"
+	healthControllers "users-api/controllers/health"
 	controllers "users-api/controllers/users"
 	"users-api/internal/tokenizers"
 	repositories "users-api/repositories/users"
+	helathServices "users-api/services/health"
 	services "users-api/services/users"
 
 	"github.com/gin-contrib/cors"
@@ -53,6 +55,12 @@ func main() {
 
 	// Handlers
 	controller := controllers.NewController(service)
+	helathService, err := helathServices.NewService() // Añadimos el manejo del error
+	if err != nil {
+		log.Fatalf("Error creating health service: %v", err)
+	}
+	log.Println("Servicio de health creado exitosamente")
+	healthController := healthControllers.NewController(helathService)
 
 	// Create router
 	router := gin.Default()
@@ -66,6 +74,7 @@ func main() {
 	router.POST("/users", controller.Create)
 	router.PUT("/users/:id", controller.Update)
 	router.POST("/login", controller.Login)
+	router.GET("/health", healthController.HealthCheck)
 
 	// Run application
 	if err := router.Run(":8083"); err != nil {

@@ -15,6 +15,7 @@ import AddCourse from './components/courses/AddCourse';
 import EditCourse from './components/courses/EditCourse';
 import CourseComments from './components/courses/CourseComments'; 
 import CommentForm from './components/courses/CommentForm';
+import ServiceStatus from './components/admin/ServiceStatus';
 import { Navigate } from 'react-router-dom';
 
 function App() {
@@ -40,6 +41,7 @@ function App() {
           <Route path="/manage-courses" element={<ManageCourses />} />
           <Route path="/add-course" element={<AddCourse />} />
           <Route path="/edit-course/:courseId" element={<EditCourse />} />
+          <Route path="/services-status" element={<ServiceStatus />} />
         </Route>
       </Routes>
     </Router>
